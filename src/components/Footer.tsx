@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
 import { Smile, MapPin, Clock } from "lucide-react";
 import { WhatsAppIcon } from "./WhatsAppIcon";
-import { NAV_LINKS, SITE_NAME, SITE_TAGLINE, waLink } from "../lib/site";
+import { NAV_ITEMS, waLink } from "../lib/site";
+import { useSite } from "../context/SiteContext";
 
 export function Footer() {
   const year = new Date().getFullYear();
+  const { config, path, ctaMessage } = useSite();
 
   return (
     <footer className="bg-foreground text-white py-14">
@@ -15,11 +17,11 @@ export function Footer() {
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
                 <Smile className="w-4 h-4" />
               </div>
-              <span className="font-display text-lg font-semibold">{SITE_NAME}</span>
+              <span className="font-display text-lg font-semibold">{config.clinicName}</span>
             </div>
             <p className="text-sm text-white/55 leading-relaxed max-w-xs">
-              {SITE_TAGLINE} completa para toda a família, com carinho, tecnologia e um sorriso de
-              cada vez.
+              Odontologia completa para toda a família, com carinho, tecnologia e um sorriso de cada
+              vez.
             </p>
           </div>
 
@@ -28,9 +30,9 @@ export function Footer() {
               Navegação
             </div>
             <ul className="flex flex-col gap-3">
-              {NAV_LINKS.map((l) => (
+              {NAV_ITEMS.map((l) => (
                 <li key={l.to}>
-                  <Link to={l.to} className="text-sm text-white/60 hover:text-white transition-colors">
+                  <Link to={path(l.to)} className="text-sm text-white/60 hover:text-white transition-colors">
                     {l.label}
                   </Link>
                 </li>
@@ -44,7 +46,7 @@ export function Footer() {
             </div>
             <div className="flex items-start gap-2.5 text-sm text-white/60 max-w-[200px]">
               <MapPin className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>Av. Sete de Setembro, 1200 — Centro, Salvador - BA</span>
+              <span>{config.address}</span>
             </div>
           </div>
 
@@ -55,7 +57,7 @@ export function Footer() {
             <ul className="flex flex-col gap-4">
               <li>
                 <a
-                  href={waLink("Olá! Vim pelo site e quero agendar uma consulta.")}
+                  href={waLink(ctaMessage("quero agendar uma consulta"))}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-2.5 text-sm text-white/60 hover:text-white transition-colors"
@@ -74,7 +76,7 @@ export function Footer() {
 
         <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/35">
-            © {year} {SITE_NAME} {SITE_TAGLINE}. Todos os direitos reservados.
+            © {year} {config.clinicName} Odontologia. Todos os direitos reservados.
           </p>
           <p className="text-xs text-white/35">Site-modelo criado por Oliveira & Co.</p>
         </div>

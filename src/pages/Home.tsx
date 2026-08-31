@@ -4,6 +4,7 @@ import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { CtaSection } from "../components/CtaSection";
 import { specialties } from "../lib/specialties";
 import { waLink } from "../lib/site";
+import { useSite } from "../context/SiteContext";
 
 const highlights = [
   { icon: CalendarCheck, label: "Agendamento online" },
@@ -28,6 +29,9 @@ const testimonials = [
 ];
 
 export default function Home() {
+  const { config, path, ctaMessage } = useSite();
+  const shownSpecialties = specialties.filter((s) => config.specialtyKeys.includes(s.key));
+
   return (
     <div>
       <section className="bg-background py-16 md:py-24 overflow-hidden">
@@ -42,12 +46,12 @@ export default function Home() {
                 Um sorriso saudável começa com o cuidado certo.
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-lg">
-                Da limpeza de rotina aos tratamentos mais avançados, a Sorriso Vital cuida de cada
-                detalhe com tecnologia, carinho e uma equipe que você confia.
+                Da limpeza de rotina aos tratamentos mais avançados, a {config.clinicName} cuida de
+                cada detalhe com tecnologia, carinho e uma equipe que você confia.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 mb-10">
                 <a
-                  href={waLink("Olá! Vim pelo site e quero agendar uma consulta.")}
+                  href={waLink(ctaMessage("quero agendar uma consulta"))}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center justify-center gap-2.5 bg-[#25D366] hover:bg-[#1DB954] text-white font-semibold px-6 py-3.5 rounded-full text-base transition-all hover:shadow-lg hover:shadow-[#25D366]/25"
@@ -56,7 +60,7 @@ export default function Home() {
                   Agendar consulta
                 </a>
                 <Link
-                  to="/especialidades"
+                  to={path("/especialidades")}
                   className="flex items-center justify-center gap-2 border-2 border-primary text-primary hover:bg-primary hover:text-white font-semibold px-6 py-3.5 rounded-full text-base transition-all"
                 >
                   Ver especialidades
@@ -124,9 +128,9 @@ export default function Home() {
             </h2>
           </div>
           <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-5">
-            {specialties.slice(0, 8).map(({ icon: Icon, title, desc }) => (
+            {shownSpecialties.slice(0, 8).map(({ key, icon: Icon, title, desc }) => (
               <div
-                key={title}
+                key={key}
                 className="bg-card border border-border rounded-2xl p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all"
               >
                 <div className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center mb-4">
@@ -139,7 +143,7 @@ export default function Home() {
           </div>
           <div className="text-center mt-10">
             <Link
-              to="/especialidades"
+              to={path("/especialidades")}
               className="inline-flex items-center gap-2 text-primary font-semibold hover:gap-3 transition-all"
             >
               Ver todas as especialidades

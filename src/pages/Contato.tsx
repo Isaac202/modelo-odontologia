@@ -3,22 +3,20 @@ import { MapPin, Clock, Map } from "lucide-react";
 import { PageHero } from "../components/PageHero";
 import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { waLink } from "../lib/site";
+import { useSite } from "../context/SiteContext";
 
 export default function Contato() {
+  const { config, ctaMessage } = useSite();
   const [nome, setNome] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [mensagem, setMensagem] = useState("");
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const texto = [
-      `Olá! Me chamo ${nome || "..."}.`,
-      whatsapp && `Meu WhatsApp: ${whatsapp}.`,
-      mensagem || "Vim pelo site e quero agendar uma consulta.",
-    ]
-      .filter(Boolean)
-      .join(" ");
-    window.open(waLink(texto), "_blank", "noopener,noreferrer");
+    const detalhe = [whatsapp && `Meu WhatsApp: ${whatsapp}.`, mensagem].filter(Boolean).join(" ");
+    const base = ctaMessage("quero agendar uma consulta");
+    const texto = nome ? `Olá! Me chamo ${nome}. ${base.replace(/^Olá! */, "")}` : base;
+    window.open(waLink(detalhe ? `${texto} ${detalhe}` : texto), "_blank", "noopener,noreferrer");
   };
 
   return (
@@ -95,9 +93,7 @@ export default function Contato() {
                   </div>
                   <div>
                     <div className="font-semibold text-foreground text-sm">Endereço</div>
-                    <div className="text-sm text-muted-foreground">
-                      Av. Sete de Setembro, 1200 — Centro, Salvador - BA
-                    </div>
+                    <div className="text-sm text-muted-foreground">{config.address}</div>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -117,12 +113,12 @@ export default function Contato() {
                   <div>
                     <div className="font-semibold text-foreground text-sm">WhatsApp</div>
                     <a
-                      href={waLink("Olá! Vim pelo site e quero agendar uma consulta.")}
+                      href={waLink(ctaMessage("quero agendar uma consulta"))}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm text-primary hover:underline"
                     >
-                      (71) 98432-7073
+                      {config.phoneDisplay}
                     </a>
                   </div>
                 </div>

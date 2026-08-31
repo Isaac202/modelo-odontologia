@@ -1,6 +1,7 @@
 import { HeartHandshake, Target, Eye, Gem, Building2, Wifi, Coffee, Baby } from "lucide-react";
 import { PageHero } from "../components/PageHero";
 import { CtaSection } from "../components/CtaSection";
+import { useSite } from "../context/SiteContext";
 
 const values = [
   {
@@ -28,6 +29,7 @@ const structure = [
 ];
 
 export default function Sobre() {
+  const { config } = useSite();
   return (
     <div>
       <PageHero
@@ -47,7 +49,7 @@ export default function Sobre() {
                 Uma clínica pensada para o seu conforto
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                A Sorriso Vital nasceu em 2010 com um propósito simples: oferecer um atendimento
+                A {config.clinicName} nasceu com um propósito simples: oferecer um atendimento
                 odontológico próximo, honesto e sem enrolação. Começamos com um único consultório e,
                 hoje, contamos com uma equipe multidisciplinar preparada para cuidar de toda a família.
               </p>
