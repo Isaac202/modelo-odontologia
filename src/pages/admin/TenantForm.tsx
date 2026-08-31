@@ -1,6 +1,6 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, X } from "lucide-react";
 import {
   createTenant,
   updateTenant,
@@ -11,6 +11,7 @@ import {
 import { specialties, ALL_SPECIALTY_KEYS } from "../../lib/specialties";
 import { isValidHexColor } from "../../lib/color";
 import { DEFAULT_SITE_CONFIG } from "../../context/SiteContext";
+import { uploadTenantLogo, validateLogoFile } from "../../lib/storage";
 
 export default function TenantForm() {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +25,9 @@ export default function TenantForm() {
   const [phoneDisplay, setPhoneDisplay] = useState(DEFAULT_SITE_CONFIG.phoneDisplay);
   const [primaryColor, setPrimaryColor] = useState(DEFAULT_SITE_CONFIG.primaryColor);
   const [specialtyKeys, setSpecialtyKeys] = useState<string[]>(ALL_SPECIALTY_KEYS);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+  const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,9 +47,16 @@ export default function TenantForm() {
       setPhoneDisplay(tenant.phone_display ?? DEFAULT_SITE_CONFIG.phoneDisplay);
       setPrimaryColor(tenant.primary_color);
       setSpecialtyKeys(tenant.specialty_keys?.length ? tenant.specialty_keys : ALL_SPECIALTY_KEYS);
+      setExistingLogoUrl(tenant.logo_url ?? null);
       setLoading(false);
     });
   }, [id]);
+
+  useEffect(() => {
+    return () => {
+      if (logoPreviewUrl) URL.revokeObjectURL(logoPreviewUrl);
+    };
+  }, [logoPreviewUrl]);
 
   const handleNameChange = (value: string) => {
     setClinicName(value);
@@ -54,6 +65,28 @@ export default function TenantForm() {
 
   const toggleSpecialty = (key: string) => {
     setSpecialtyKeys((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+  };
+
+  const handleLogoChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const validationError = validateLogoFile(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+    setError(null);
+    if (logoPreviewUrl) URL.revokeObjectURL(logoPreviewUrl);
+    setLogoFile(file);
+    setLogoPreviewUrl(URL.createObjectURL(file));
+  };
+
+  const removeLogo = () => {
+    if (logoPreviewUrl) URL.revokeObjectURL(logoPreviewUrl);
+    setLogoFile(null);
+    setLogoPreviewUrl(null);
+    setExistingLogoUrl(null);
   };
 
   const onSubmit = async (e: FormEvent) => {
@@ -70,6 +103,19 @@ export default function TenantForm() {
       return;
     }
 
+    setSaving(true);
+
+    let logoUrl = existingLogoUrl;
+    if (logoFile) {
+      const uploadResult = await uploadTenantLogo(logoFile, finalSlug);
+      if (uploadResult.error) {
+        setSaving(false);
+        setError(uploadResult.error);
+        return;
+      }
+      logoUrl = uploadResult.url;
+    }
+
     const input: TenantInput = {
       slug: finalSlug,
       clinic_name: clinicName.trim(),
@@ -77,9 +123,9 @@ export default function TenantForm() {
       phone_display: phoneDisplay.trim(),
       primary_color: primaryColor,
       specialty_keys: specialtyKeys,
+      logo_url: logoUrl,
     };
 
-    setSaving(true);
     const result = isEdit ? await updateTenant(id!, input) : await createTenant(input);
     setSaving(false);
 
@@ -200,6 +246,45 @@ export default function TenantForm() {
               className="w-32 rounded-lg border border-border bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f9b8e]/40"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-foreground mb-1.5">Logomarca</label>
+          <div className="flex items-center gap-4">
+            {logoPreviewUrl || existingLogoUrl ? (
+              <div className="relative">
+                <img
+                  src={logoPreviewUrl ?? existingLogoUrl ?? undefined}
+                  alt="Logo da clínica"
+                  className="w-16 h-16 rounded-xl object-contain bg-white border border-border"
+                />
+                <button
+                  type="button"
+                  onClick={removeLogo}
+                  className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-foreground text-white flex items-center justify-center"
+                  aria-label="Remover logo"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ) : (
+              <div className="w-16 h-16 rounded-xl border border-dashed border-border flex items-center justify-center text-xs text-muted-foreground text-center px-1">
+                Sem logo
+              </div>
+            )}
+            <label className="cursor-pointer text-sm font-medium text-[#0f9b8e] hover:text-[#0c7a70] transition-colors">
+              Escolher imagem
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                onChange={handleLogoChange}
+                className="hidden"
+              />
+            </label>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1.5">
+            PNG, JPG, WEBP ou SVG, até 2MB. Se não enviar, usamos um ícone genérico.
+          </p>
         </div>
 
         <div>

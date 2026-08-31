@@ -10,6 +10,7 @@ export type Tenant = {
   phone_display: string | null;
   primary_color: string;
   specialty_keys: string[];
+  logo_url: string | null;
 };
 
 export type TenantInput = {
@@ -19,6 +20,7 @@ export type TenantInput = {
   phone_display: string;
   primary_color: string;
   specialty_keys: string[];
+  logo_url: string | null;
 };
 
 export function slugify(input: string): string {

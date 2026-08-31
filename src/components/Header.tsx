@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
-import { Menu, X, Smile } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { WhatsAppIcon } from "./WhatsAppIcon";
+import { BrandMark } from "./BrandMark";
 import { NAV_ITEMS, waLink } from "../lib/site";
 import { useSite } from "../context/SiteContext";
 
@@ -14,9 +15,7 @@ export function Header() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           <Link to={path("/")} className="flex items-center gap-2.5" onClick={() => setOpen(false)}>
-            <div className="w-9 h-9 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0">
-              <Smile className="w-5 h-5" />
-            </div>
+            <BrandMark />
             <span className="font-display text-lg font-semibold text-foreground leading-none">
               {config.clinicName}
               <span className="block text-[10px] font-sans font-medium tracking-widest text-primary uppercase mt-0.5">

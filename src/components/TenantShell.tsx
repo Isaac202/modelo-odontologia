@@ -15,6 +15,7 @@ function tenantToConfig(tenant: Tenant): SiteConfig {
     phoneDisplay: tenant.phone_display || DEFAULT_SITE_CONFIG.phoneDisplay,
     primaryColor: tenant.primary_color || DEFAULT_SITE_CONFIG.primaryColor,
     specialtyKeys: tenant.specialty_keys?.length ? tenant.specialty_keys : ALL_SPECIALTY_KEYS,
+    logoUrl: tenant.logo_url || null,
   };
 }
 

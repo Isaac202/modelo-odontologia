@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
-import { Smile, MapPin, Clock } from "lucide-react";
+import { MapPin, Clock } from "lucide-react";
 import { WhatsAppIcon } from "./WhatsAppIcon";
+import { BrandMark } from "./BrandMark";
 import { NAV_ITEMS, waLink } from "../lib/site";
 import { useSite } from "../context/SiteContext";
 
@@ -14,9 +15,7 @@ export function Footer() {
         <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-10 mb-10">
           <div className="sm:col-span-2 md:col-span-1">
             <div className="flex items-center gap-2.5 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
-                <Smile className="w-4 h-4" />
-              </div>
+              <BrandMark size="sm" />
               <span className="font-display text-lg font-semibold">{config.clinicName}</span>
             </div>
             <p className="text-sm text-white/55 leading-relaxed max-w-xs">

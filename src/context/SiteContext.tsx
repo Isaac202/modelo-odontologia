@@ -9,6 +9,7 @@ export type SiteConfig = {
   phoneDisplay: string;
   primaryColor: string;
   specialtyKeys: string[];
+  logoUrl: string | null;
 };
 
 export const DEFAULT_SITE_CONFIG: SiteConfig = {
@@ -19,6 +20,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
   phoneDisplay: "(71) 98432-7073",
   primaryColor: "#0f9b8e",
   specialtyKeys: ALL_SPECIALTY_KEYS,
+  logoUrl: null,
 };
 
 type SiteContextValue = {
