@@ -10,6 +10,7 @@ export type SiteConfig = {
   primaryColor: string;
   specialtyKeys: string[];
   logoUrl: string | null;
+  bookingSlug: string | null;
 };
 
 export const DEFAULT_SITE_CONFIG: SiteConfig = {
@@ -21,6 +22,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
   primaryColor: "#0f9b8e",
   specialtyKeys: ALL_SPECIALTY_KEYS,
   logoUrl: null,
+  bookingSlug: null,
 };
 
 type SiteContextValue = {

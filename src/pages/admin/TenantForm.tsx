@@ -5,6 +5,7 @@ import {
   createTenant,
   updateTenant,
   getTenantById,
+  setTenantBookingSlug,
   slugify,
   type TenantInput,
 } from "../../lib/tenant";
@@ -12,6 +13,7 @@ import { specialties, ALL_SPECIALTY_KEYS } from "../../lib/specialties";
 import { isValidHexColor } from "../../lib/color";
 import { DEFAULT_SITE_CONFIG } from "../../context/SiteContext";
 import { uploadTenantLogo, validateLogoFile } from "../../lib/storage";
+import { provisionBooking, bookingUrl } from "../../lib/booking";
 
 export default function TenantForm() {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +30,8 @@ export default function TenantForm() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
+  const [bookingSlug, setBookingSlug] = useState<string | null>(null);
+  const [bookingWarning, setBookingWarning] = useState<string | null>(null);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +52,7 @@ export default function TenantForm() {
       setPrimaryColor(tenant.primary_color);
       setSpecialtyKeys(tenant.specialty_keys?.length ? tenant.specialty_keys : ALL_SPECIALTY_KEYS);
       setExistingLogoUrl(tenant.logo_url ?? null);
+      setBookingSlug(tenant.booking_slug ?? null);
       setLoading(false);
     });
   }, [id]);
@@ -127,9 +132,9 @@ export default function TenantForm() {
     };
 
     const result = isEdit ? await updateTenant(id!, input) : await createTenant(input);
-    setSaving(false);
 
     if (result.error) {
+      setSaving(false);
       setError(
         result.error.includes("duplicate") || result.error.includes("unique")
           ? "Já existe uma clínica com esse link. Escolha outro."
@@ -138,7 +143,34 @@ export default function TenantForm() {
       return;
     }
 
+    const tenant = result.tenant!;
+    if (!bookingSlug) {
+      const prov = await provisionBooking(tenant.clinic_name);
+      if (prov.bookingSlug) {
+        await setTenantBookingSlug(tenant.id, prov.bookingSlug);
+      } else {
+        setBookingWarning(
+          "Clínica salva, mas não deu pra conectar ao sistema de agendamentos agora. Edite a clínica de novo pra tentar de novo.",
+        );
+      }
+    }
+
+    setSaving(false);
     navigate("/admin");
+  };
+
+  const retryBookingConnection = async () => {
+    if (!id) return;
+    setBookingWarning(null);
+    setSaving(true);
+    const prov = await provisionBooking(clinicName.trim());
+    if (prov.bookingSlug) {
+      await setTenantBookingSlug(id, prov.bookingSlug);
+      setBookingSlug(prov.bookingSlug);
+    } else {
+      setBookingWarning(prov.error ?? "Não deu pra conectar ao sistema de agendamentos agora.");
+    }
+    setSaving(false);
   };
 
   if (loading) {
@@ -287,6 +319,41 @@ export default function TenantForm() {
           </p>
         </div>
 
+        {isEdit && (
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Sistema de agendamento
+            </label>
+            {bookingSlug ? (
+              <div className="flex items-center gap-2.5 text-sm">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                <span className="text-foreground">Conectado —</span>
+                <a
+                  href={bookingUrl(bookingSlug)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#0f9b8e] hover:underline"
+                >
+                  ver página de agendamento
+                </a>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2.5 text-sm">
+                <span className="w-2 h-2 rounded-full bg-muted-foreground/40 shrink-0" />
+                <span className="text-muted-foreground">Ainda não conectado</span>
+                <button
+                  type="button"
+                  onClick={retryBookingConnection}
+                  disabled={saving}
+                  className="text-[#0f9b8e] hover:underline font-medium disabled:opacity-60"
+                >
+                  Conectar agora
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">Especialidades oferecidas</label>
           <div className="grid sm:grid-cols-2 gap-2.5">
@@ -308,6 +375,7 @@ export default function TenantForm() {
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
+        {bookingWarning && <p className="text-sm text-amber-600">{bookingWarning}</p>}
 
         <div className="flex items-center gap-3">
           <button

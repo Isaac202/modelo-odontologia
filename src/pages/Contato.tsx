@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from "react";
-import { MapPin, Clock, Map } from "lucide-react";
+import { MapPin, Clock, Map, CalendarCheck } from "lucide-react";
 import { PageHero } from "../components/PageHero";
 import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { waLink } from "../lib/site";
+import { bookingUrl } from "../lib/booking";
 import { useSite } from "../context/SiteContext";
 
 export default function Contato() {
@@ -79,6 +80,17 @@ export default function Contato() {
                   <WhatsAppIcon />
                   Enviar pelo WhatsApp
                 </button>
+                {config.bookingSlug && (
+                  <a
+                    href={bookingUrl(config.bookingSlug)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2.5 bg-primary hover:opacity-90 text-primary-foreground font-semibold px-6 py-3.5 rounded-full text-base transition-all"
+                  >
+                    <CalendarCheck className="w-5 h-5" />
+                    Agendar direto pelo sistema
+                  </a>
+                )}
               </form>
             </div>
 

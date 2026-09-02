@@ -11,6 +11,7 @@ export type Tenant = {
   primary_color: string;
   specialty_keys: string[];
   logo_url: string | null;
+  booking_slug: string | null;
 };
 
 export type TenantInput = {
@@ -104,5 +105,17 @@ export async function updateTenant(
 export async function deleteTenant(id: string): Promise<{ error: string | null }> {
   if (!supabase) return { error: "Supabase não configurado" };
   const { error } = await supabase.from("odonto_tenants").delete().eq("id", id);
+  return { error: error?.message ?? null };
+}
+
+export async function setTenantBookingSlug(
+  id: string,
+  bookingSlug: string,
+): Promise<{ error: string | null }> {
+  if (!supabase) return { error: "Supabase não configurado" };
+  const { error } = await supabase
+    .from("odonto_tenants")
+    .update({ booking_slug: bookingSlug })
+    .eq("id", id);
   return { error: error?.message ?? null };
 }

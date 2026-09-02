@@ -16,6 +16,7 @@ function tenantToConfig(tenant: Tenant): SiteConfig {
     primaryColor: tenant.primary_color || DEFAULT_SITE_CONFIG.primaryColor,
     specialtyKeys: tenant.specialty_keys?.length ? tenant.specialty_keys : ALL_SPECIALTY_KEYS,
     logoUrl: tenant.logo_url || null,
+    bookingSlug: tenant.booking_slug || null,
   };
 }
 
