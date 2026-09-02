@@ -119,3 +119,32 @@ export async function setTenantBookingSlug(
     .eq("id", id);
   return { error: error?.message ?? null };
 }
+
+export type TenantSecrets = {
+  tenant_id: string;
+  booking_api_token: string;
+  booking_admin_id: number | null;
+  booking_admin_email: string | null;
+};
+
+export async function getTenantSecrets(tenantId: string): Promise<TenantSecrets | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("odonto_tenant_secrets")
+    .select("*")
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+  if (error) {
+    console.error("Falha ao buscar credenciais de agendamento:", error.message);
+    return null;
+  }
+  return data as TenantSecrets | null;
+}
+
+export async function saveTenantSecrets(
+  secrets: TenantSecrets,
+): Promise<{ error: string | null }> {
+  if (!supabase) return { error: "Supabase não configurado" };
+  const { error } = await supabase.from("odonto_tenant_secrets").upsert(secrets);
+  return { error: error?.message ?? null };
+}

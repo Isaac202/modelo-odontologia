@@ -6,6 +6,8 @@ import {
   updateTenant,
   getTenantById,
   setTenantBookingSlug,
+  getTenantSecrets,
+  saveTenantSecrets,
   slugify,
   type TenantInput,
 } from "../../lib/tenant";
@@ -13,7 +15,13 @@ import { specialties, ALL_SPECIALTY_KEYS } from "../../lib/specialties";
 import { isValidHexColor } from "../../lib/color";
 import { DEFAULT_SITE_CONFIG } from "../../context/SiteContext";
 import { uploadTenantLogo, validateLogoFile } from "../../lib/storage";
-import { provisionBooking, bookingUrl } from "../../lib/booking";
+import {
+  provisionBooking,
+  createBookingAdmin,
+  resetBookingPassword,
+  bookingUrl,
+  bookingPanelLoginUrl,
+} from "../../lib/booking";
 
 export default function TenantForm() {
   const { id } = useParams<{ id: string }>();
@@ -32,6 +40,14 @@ export default function TenantForm() {
   const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
   const [bookingSlug, setBookingSlug] = useState<string | null>(null);
   const [bookingWarning, setBookingWarning] = useState<string | null>(null);
+  const [bookingApiToken, setBookingApiToken] = useState<string | null>(null);
+  const [bookingAdminId, setBookingAdminId] = useState<number | null>(null);
+  const [bookingAdminEmail, setBookingAdminEmail] = useState<string | null>(null);
+  const [adminEmailInput, setAdminEmailInput] = useState("");
+  const [adminPasswordInput, setAdminPasswordInput] = useState("");
+  const [resetPasswordInput, setResetPasswordInput] = useState("");
+  const [resetPasswordSaving, setResetPasswordSaving] = useState(false);
+  const [resetPasswordMessage, setResetPasswordMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +70,15 @@ export default function TenantForm() {
       setExistingLogoUrl(tenant.logo_url ?? null);
       setBookingSlug(tenant.booking_slug ?? null);
       setLoading(false);
+
+      if (tenant.booking_slug) {
+        getTenantSecrets(tenant.id).then((secrets) => {
+          if (!secrets) return;
+          setBookingApiToken(secrets.booking_api_token);
+          setBookingAdminId(secrets.booking_admin_id);
+          setBookingAdminEmail(secrets.booking_admin_email);
+        });
+      }
     });
   }, [id]);
 
@@ -107,6 +132,10 @@ export default function TenantForm() {
       setError("A cor principal precisa ser um hex válido, tipo #0f9b8e.");
       return;
     }
+    if (!bookingSlug && adminEmailInput && adminPasswordInput.length < 7) {
+      setError("A senha de acesso precisa ter pelo menos 7 caracteres.");
+      return;
+    }
 
     setSaving(true);
 
@@ -145,9 +174,21 @@ export default function TenantForm() {
 
     const tenant = result.tenant!;
     if (!bookingSlug) {
-      const prov = await provisionBooking(tenant.clinic_name);
+      const prov = await provisionBooking(
+        tenant.clinic_name,
+        adminEmailInput.trim() || undefined,
+        adminPasswordInput || undefined,
+      );
       if (prov.bookingSlug) {
         await setTenantBookingSlug(tenant.id, prov.bookingSlug);
+        if (prov.apiToken) {
+          await saveTenantSecrets({
+            tenant_id: tenant.id,
+            booking_api_token: prov.apiToken,
+            booking_admin_id: prov.adminId,
+            booking_admin_email: prov.adminEmail,
+          });
+        }
       } else {
         setBookingWarning(
           "Clínica salva, mas não deu pra conectar ao sistema de agendamentos agora. Edite a clínica de novo pra tentar de novo.",
@@ -161,16 +202,90 @@ export default function TenantForm() {
 
   const retryBookingConnection = async () => {
     if (!id) return;
+    if (adminEmailInput && adminPasswordInput.length < 7) {
+      setBookingWarning("A senha de acesso precisa ter pelo menos 7 caracteres.");
+      return;
+    }
     setBookingWarning(null);
     setSaving(true);
-    const prov = await provisionBooking(clinicName.trim());
+    const prov = await provisionBooking(
+      clinicName.trim(),
+      adminEmailInput.trim() || undefined,
+      adminPasswordInput || undefined,
+    );
     if (prov.bookingSlug) {
       await setTenantBookingSlug(id, prov.bookingSlug);
       setBookingSlug(prov.bookingSlug);
+      if (prov.apiToken) {
+        await saveTenantSecrets({
+          tenant_id: id,
+          booking_api_token: prov.apiToken,
+          booking_admin_id: prov.adminId,
+          booking_admin_email: prov.adminEmail,
+        });
+        setBookingApiToken(prov.apiToken);
+        setBookingAdminId(prov.adminId);
+        setBookingAdminEmail(prov.adminEmail);
+        setAdminEmailInput("");
+        setAdminPasswordInput("");
+      }
     } else {
       setBookingWarning(prov.error ?? "Não deu pra conectar ao sistema de agendamentos agora.");
     }
     setSaving(false);
+  };
+
+  const handleCreateAccess = async () => {
+    if (!id || !bookingApiToken) return;
+    if (!adminEmailInput.trim() || adminPasswordInput.length < 7) {
+      setBookingWarning("Informe um e-mail e uma senha de pelo menos 7 caracteres.");
+      return;
+    }
+    setBookingWarning(null);
+    setSaving(true);
+    const { adminId, error: createError } = await createBookingAdmin(
+      bookingApiToken,
+      clinicName.trim(),
+      adminEmailInput.trim(),
+      adminPasswordInput,
+    );
+    if (adminId) {
+      await saveTenantSecrets({
+        tenant_id: id,
+        booking_api_token: bookingApiToken,
+        booking_admin_id: adminId,
+        booking_admin_email: adminEmailInput.trim(),
+      });
+      setBookingAdminId(adminId);
+      setBookingAdminEmail(adminEmailInput.trim());
+      setAdminEmailInput("");
+      setAdminPasswordInput("");
+    } else {
+      setBookingWarning(createError ?? "Não foi possível criar o acesso agora.");
+    }
+    setSaving(false);
+  };
+
+  const handleResetPassword = async () => {
+    if (!id || !bookingApiToken || !bookingAdminId) return;
+    if (resetPasswordInput.length < 7) {
+      setResetPasswordMessage("A senha precisa ter pelo menos 7 caracteres.");
+      return;
+    }
+    setResetPasswordSaving(true);
+    setResetPasswordMessage(null);
+    const { error: resetError } = await resetBookingPassword(
+      bookingApiToken,
+      bookingAdminId,
+      resetPasswordInput,
+    );
+    setResetPasswordSaving(false);
+    if (resetError) {
+      setResetPasswordMessage(resetError);
+      return;
+    }
+    setResetPasswordInput("");
+    setResetPasswordMessage("Senha atualizada.");
   };
 
   if (loading) {
@@ -319,25 +434,126 @@ export default function TenantForm() {
           </p>
         </div>
 
-        {isEdit && (
+        {isEdit && bookingSlug && bookingAdminId && (
           <div>
             <label className="block text-sm font-medium text-foreground mb-1.5">
               Sistema de agendamento
             </label>
-            {bookingSlug ? (
-              <div className="flex items-center gap-2.5 text-sm">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                <span className="text-foreground">Conectado —</span>
-                <a
-                  href={bookingUrl(bookingSlug)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#0f9b8e] hover:underline"
-                >
-                  ver página de agendamento
-                </a>
-              </div>
-            ) : (
+            <div className="flex items-center gap-2.5 text-sm mb-3">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+              <span className="text-foreground">Conectado</span>
+              <span className="text-muted-foreground">— login: {bookingAdminEmail}</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 mb-3">
+              <a
+                href={bookingUrl(bookingSlug)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-[#0f9b8e] hover:underline"
+              >
+                Ver página de agendamento
+              </a>
+              <a
+                href={bookingPanelLoginUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-[#0f9b8e] hover:underline"
+              >
+                Entrar no painel
+              </a>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="password"
+                value={resetPasswordInput}
+                onChange={(e) => setResetPasswordInput(e.target.value)}
+                placeholder="Nova senha (mín. 7 caracteres)"
+                className="w-64 rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f9b8e]/40"
+              />
+              <button
+                type="button"
+                onClick={handleResetPassword}
+                disabled={resetPasswordSaving}
+                className="text-sm font-medium text-[#0f9b8e] hover:underline disabled:opacity-60"
+              >
+                Redefinir senha
+              </button>
+            </div>
+            {resetPasswordMessage && (
+              <p className="text-xs text-muted-foreground mt-1.5">{resetPasswordMessage}</p>
+            )}
+          </div>
+        )}
+
+        {isEdit && bookingSlug && !bookingAdminId && (
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Sistema de agendamento
+            </label>
+            <div className="flex items-center gap-2.5 text-sm mb-3">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+              <span className="text-foreground">Conectado</span>
+              <span className="text-muted-foreground">— sem login de acesso ainda</span>
+              <a
+                href={bookingUrl(bookingSlug)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#0f9b8e] hover:underline"
+              >
+                ver página de agendamento
+              </a>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                value={adminEmailInput}
+                onChange={(e) => setAdminEmailInput(e.target.value)}
+                placeholder="E-mail de acesso da clínica"
+                className="w-64 rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f9b8e]/40"
+              />
+              <input
+                type="password"
+                value={adminPasswordInput}
+                onChange={(e) => setAdminPasswordInput(e.target.value)}
+                placeholder="Senha (mín. 7 caracteres)"
+                className="w-48 rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f9b8e]/40"
+              />
+              <button
+                type="button"
+                onClick={handleCreateAccess}
+                disabled={saving}
+                className="text-sm font-medium text-[#0f9b8e] hover:underline disabled:opacity-60"
+              >
+                Criar acesso
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!bookingSlug && (
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-1.5">
+              Sistema de agendamento
+            </label>
+            <p className="text-xs text-muted-foreground mb-2">
+              Opcional: informe um e-mail e senha pra clínica já entrar direto no painel de
+              agendamentos. Se deixar em branco, dá pra configurar isso depois.
+            </p>
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <input
+                value={adminEmailInput}
+                onChange={(e) => setAdminEmailInput(e.target.value)}
+                placeholder="E-mail de acesso da clínica"
+                className="w-64 rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f9b8e]/40"
+              />
+              <input
+                type="password"
+                value={adminPasswordInput}
+                onChange={(e) => setAdminPasswordInput(e.target.value)}
+                placeholder="Senha (mín. 7 caracteres)"
+                className="w-48 rounded-lg border border-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f9b8e]/40"
+              />
+            </div>
+            {isEdit && (
               <div className="flex items-center gap-2.5 text-sm">
                 <span className="w-2 h-2 rounded-full bg-muted-foreground/40 shrink-0" />
                 <span className="text-muted-foreground">Ainda não conectado</span>

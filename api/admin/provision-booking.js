@@ -24,9 +24,13 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { clinicName } = req.body || {};
+  const { clinicName, adminEmail, adminPassword } = req.body || {};
   if (!clinicName || typeof clinicName !== "string") {
     res.status(400).json({ error: "Nome da clínica é obrigatório." });
+    return;
+  }
+  if (adminEmail && (!adminPassword || adminPassword.length < 7)) {
+    res.status(400).json({ error: "A senha precisa ter pelo menos 7 caracteres." });
     return;
   }
 
@@ -37,23 +41,47 @@ export default async function handler(req, res) {
     return;
   }
 
+  const base = easyBaseUrl.replace(/\/$/, "");
+
   try {
-    const eaRes = await fetch(`${easyBaseUrl.replace(/\/$/, "")}/index.php/api/v1/companies`, {
+    const companyPayload = { name: clinicName };
+    if (adminEmail) {
+      companyPayload.email = adminEmail;
+      companyPayload.password = adminPassword;
+    }
+
+    const eaRes = await fetch(`${base}/index.php/api/v1/companies`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${platformToken}`,
       },
-      body: JSON.stringify({ name: clinicName }),
+      body: JSON.stringify(companyPayload),
     });
 
     const eaData = await eaRes.json().catch(() => null);
-    if (!eaRes.ok || !eaData?.slug) {
+    if (!eaRes.ok || !eaData?.slug || !eaData?.apiToken) {
       res.status(502).json({ error: "Não foi possível provisionar o agendamento." });
       return;
     }
 
-    res.status(200).json({ bookingSlug: eaData.slug });
+    const result = { bookingSlug: eaData.slug, apiToken: eaData.apiToken };
+
+    if (eaData.admin?.username) {
+      const adminsRes = await fetch(
+        `${base}/index.php/api/v1/admins?q=${encodeURIComponent(eaData.admin.username)}&length=1`,
+        { headers: { Authorization: `Bearer ${eaData.apiToken}` } },
+      );
+      const admins = await adminsRes.json().catch(() => null);
+      const admin = Array.isArray(admins) ? admins[0] : null;
+
+      if (adminsRes.ok && admin?.id) {
+        result.adminId = admin.id;
+        result.adminEmail = eaData.admin.username;
+      }
+    }
+
+    res.status(200).json(result);
   } catch {
     res.status(502).json({ error: "Não foi possível conectar ao sistema de agendamentos." });
   }
