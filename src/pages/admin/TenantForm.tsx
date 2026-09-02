@@ -180,8 +180,12 @@ export default function TenantForm() {
         adminPasswordInput || undefined,
       );
       if (prov.bookingSlug) {
-        await setTenantBookingSlug(tenant.id, prov.bookingSlug);
-        if (prov.apiToken) {
+        const { error: slugError } = await setTenantBookingSlug(tenant.id, prov.bookingSlug);
+        if (slugError) {
+          setBookingWarning(
+            `Clínica salva, mas o agendamento foi provisionado sem salvar no site (${slugError}). Edite a clínica de novo pra tentar de novo.`,
+          );
+        } else if (prov.apiToken) {
           await saveTenantSecrets({
             tenant_id: tenant.id,
             booking_api_token: prov.apiToken,
@@ -214,7 +218,12 @@ export default function TenantForm() {
       adminPasswordInput || undefined,
     );
     if (prov.bookingSlug) {
-      await setTenantBookingSlug(id, prov.bookingSlug);
+      const { error: slugError } = await setTenantBookingSlug(id, prov.bookingSlug);
+      if (slugError) {
+        setBookingWarning(`Não foi possível salvar a conexão no site (${slugError}).`);
+        setSaving(false);
+        return;
+      }
       setBookingSlug(prov.bookingSlug);
       if (prov.apiToken) {
         await saveTenantSecrets({
