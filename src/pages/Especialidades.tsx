@@ -11,14 +11,20 @@ export default function Especialidades() {
   const { config, ctaMessage } = useSite();
   const isDemo = config.slug === null;
   const copy = getCopy(isDemo);
-  const shown = isDemo
-    ? specialties.filter((s) => config.specialtyKeys.includes(s.key))
+  const tenantServices = config.eaServices?.length
+    ? config.eaServices.map((s) => ({
+        key: `ea-${s.id}`,
+        icon: CheckCircle2,
+        title: s.name,
+        desc: s.description ?? "",
+      }))
     : config.specialtyKeys.map((label) => ({
         key: label,
         icon: CheckCircle2,
         title: label,
         desc: "",
       }));
+  const shown = isDemo ? specialties.filter((s) => config.specialtyKeys.includes(s.key)) : tenantServices;
 
   return (
     <div>

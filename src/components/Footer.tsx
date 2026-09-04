@@ -4,12 +4,18 @@ import { WhatsAppIcon } from "./WhatsAppIcon";
 import { BrandMark } from "./BrandMark";
 import { NAV_ITEMS, waLink } from "../lib/site";
 import { getCopy } from "../lib/copy";
+import { formatWorkingPlan } from "../lib/siteData";
 import { useSite } from "../context/SiteContext";
 
 export function Footer() {
   const year = new Date().getFullYear();
   const { config, path, ctaMessage } = useSite();
   const copy = getCopy(config.slug === null);
+  const workingHours = config.eaWorkingPlan ? formatWorkingPlan(config.eaWorkingPlan) : null;
+  const hoursLabel =
+    workingHours && workingHours.length > 0
+      ? `${workingHours[0].label}, ${workingHours[0].hours}`
+      : "Seg. a Sex., 8h às 19h";
 
   return (
     <footer className="bg-foreground text-white py-14">
@@ -66,7 +72,7 @@ export function Footer() {
               </li>
               <li className="flex items-center gap-2.5 text-sm text-white/60">
                 <Clock className="w-4 h-4 shrink-0" />
-                Seg. a Sex., 8h às 19h
+                {hoursLabel}
               </li>
             </ul>
           </div>

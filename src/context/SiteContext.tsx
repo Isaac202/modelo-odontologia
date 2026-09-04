@@ -1,5 +1,6 @@
 import { createContext, useContext, type ReactNode } from "react";
 import { ALL_SPECIALTY_KEYS } from "../lib/specialties";
+import type { EaService, WorkingPlan } from "../lib/siteData";
 
 export type SiteConfig = {
   slug: string | null;
@@ -11,6 +12,8 @@ export type SiteConfig = {
   specialtyKeys: string[];
   logoUrl: string | null;
   bookingSlug: string | null;
+  eaServices: EaService[] | null;
+  eaWorkingPlan: WorkingPlan | null;
 };
 
 export const DEFAULT_SITE_CONFIG: SiteConfig = {
@@ -23,6 +26,8 @@ export const DEFAULT_SITE_CONFIG: SiteConfig = {
   specialtyKeys: ALL_SPECIALTY_KEYS,
   logoUrl: null,
   bookingSlug: null,
+  eaServices: null,
+  eaWorkingPlan: null,
 };
 
 type SiteContextValue = {

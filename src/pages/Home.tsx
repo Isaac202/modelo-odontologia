@@ -18,9 +18,17 @@ export default function Home() {
   const { config, path, ctaMessage } = useSite();
   const isDemo = config.slug === null;
   const copy = getCopy(isDemo);
+  const tenantServices = config.eaServices?.length
+    ? config.eaServices.map((s) => ({
+        key: `ea-${s.id}`,
+        icon: CheckCircle2,
+        title: s.name,
+        desc: s.description ?? "",
+      }))
+    : config.specialtyKeys.map((label) => ({ key: label, icon: CheckCircle2, title: label, desc: "" }));
   const shownSpecialties = isDemo
     ? specialties.filter((s) => config.specialtyKeys.includes(s.key))
-    : config.specialtyKeys.map((label) => ({ key: label, icon: CheckCircle2, title: label, desc: "" }));
+    : tenantServices;
 
   return (
     <div>

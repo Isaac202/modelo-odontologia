@@ -4,10 +4,12 @@ import { PageHero } from "../components/PageHero";
 import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { waLink } from "../lib/site";
 import { bookingUrl } from "../lib/booking";
+import { formatWorkingPlan } from "../lib/siteData";
 import { useSite } from "../context/SiteContext";
 
 export default function Contato() {
   const { config, ctaMessage } = useSite();
+  const workingHours = config.eaWorkingPlan ? formatWorkingPlan(config.eaWorkingPlan) : null;
   const [nome, setNome] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [mensagem, setMensagem] = useState("");
@@ -114,8 +116,18 @@ export default function Contato() {
                   </div>
                   <div>
                     <div className="font-semibold text-foreground text-sm">Horário de atendimento</div>
-                    <div className="text-sm text-muted-foreground">Segunda a sexta, 8h às 19h</div>
-                    <div className="text-sm text-muted-foreground">Sábado, 8h às 12h</div>
+                    {workingHours && workingHours.length > 0 ? (
+                      workingHours.map((row) => (
+                        <div key={row.label} className="text-sm text-muted-foreground">
+                          {row.label}, {row.hours}
+                        </div>
+                      ))
+                    ) : (
+                      <>
+                        <div className="text-sm text-muted-foreground">Segunda a sexta, 8h às 19h</div>
+                        <div className="text-sm text-muted-foreground">Sábado, 8h às 12h</div>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-start gap-3">

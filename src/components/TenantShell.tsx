@@ -4,7 +4,7 @@ import { Layout } from "./Layout";
 import NotFound from "../pages/NotFound";
 import { SiteProvider, DEFAULT_SITE_CONFIG, type SiteConfig } from "../context/SiteContext";
 import { getTenantBySlug, type Tenant } from "../lib/tenant";
-import { ALL_SPECIALTY_KEYS } from "../lib/specialties";
+import { fetchSiteData } from "../lib/siteData";
 
 function tenantToConfig(tenant: Tenant): SiteConfig {
   return {
@@ -14,9 +14,11 @@ function tenantToConfig(tenant: Tenant): SiteConfig {
     address: tenant.address || DEFAULT_SITE_CONFIG.address,
     phoneDisplay: tenant.phone_display || DEFAULT_SITE_CONFIG.phoneDisplay,
     primaryColor: tenant.primary_color || DEFAULT_SITE_CONFIG.primaryColor,
-    specialtyKeys: tenant.specialty_keys?.length ? tenant.specialty_keys : ALL_SPECIALTY_KEYS,
+    specialtyKeys: tenant.specialty_keys ?? [],
     logoUrl: tenant.logo_url || null,
     bookingSlug: tenant.booking_slug || null,
+    eaServices: null,
+    eaWorkingPlan: null,
   };
 }
 
@@ -40,6 +42,13 @@ export function TenantShell() {
       }
       setConfig(tenantToConfig(tenant));
       setStatus("ready");
+
+      if (tenant.booking_slug) {
+        fetchSiteData(tenant.slug).then((data) => {
+          if (!active || !data.connected) return;
+          setConfig((prev) => (prev ? { ...prev, eaServices: data.services, eaWorkingPlan: data.workingPlan } : prev));
+        });
+      }
     });
     return () => {
       active = false;
