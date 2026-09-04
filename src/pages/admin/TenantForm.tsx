@@ -11,7 +11,6 @@ import {
   slugify,
   type TenantInput,
 } from "../../lib/tenant";
-import { specialties, ALL_SPECIALTY_KEYS } from "../../lib/specialties";
 import { isValidHexColor } from "../../lib/color";
 import { DEFAULT_SITE_CONFIG } from "../../context/SiteContext";
 import { uploadTenantLogo, validateLogoFile } from "../../lib/storage";
@@ -34,7 +33,8 @@ export default function TenantForm() {
   const [address, setAddress] = useState("");
   const [phoneDisplay, setPhoneDisplay] = useState(DEFAULT_SITE_CONFIG.phoneDisplay);
   const [primaryColor, setPrimaryColor] = useState(DEFAULT_SITE_CONFIG.primaryColor);
-  const [specialtyKeys, setSpecialtyKeys] = useState<string[]>(ALL_SPECIALTY_KEYS);
+  const [specialtyKeys, setSpecialtyKeys] = useState<string[]>([]);
+  const [newSpecialty, setNewSpecialty] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
   const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
@@ -66,7 +66,7 @@ export default function TenantForm() {
       setAddress(tenant.address ?? "");
       setPhoneDisplay(tenant.phone_display ?? DEFAULT_SITE_CONFIG.phoneDisplay);
       setPrimaryColor(tenant.primary_color);
-      setSpecialtyKeys(tenant.specialty_keys?.length ? tenant.specialty_keys : ALL_SPECIALTY_KEYS);
+      setSpecialtyKeys(tenant.specialty_keys ?? []);
       setExistingLogoUrl(tenant.logo_url ?? null);
       setBookingSlug(tenant.booking_slug ?? null);
       setLoading(false);
@@ -93,8 +93,15 @@ export default function TenantForm() {
     if (!slugTouched) setSlug(slugify(value));
   };
 
-  const toggleSpecialty = (key: string) => {
-    setSpecialtyKeys((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+  const addSpecialty = () => {
+    const value = newSpecialty.trim();
+    if (!value || specialtyKeys.includes(value)) return;
+    setSpecialtyKeys((prev) => [...prev, value]);
+    setNewSpecialty("");
+  };
+
+  const removeSpecialty = (value: string) => {
+    setSpecialtyKeys((prev) => prev.filter((s) => s !== value));
   };
 
   const handleLogoChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -581,22 +588,47 @@ export default function TenantForm() {
 
         <div>
           <label className="block text-sm font-medium text-foreground mb-2">Especialidades oferecidas</label>
-          <div className="grid sm:grid-cols-2 gap-2.5">
-            {specialties.map((s) => (
-              <label
-                key={s.key}
-                className="flex items-center gap-2.5 border border-border rounded-lg px-3.5 py-2.5 text-sm cursor-pointer hover:bg-muted transition-colors"
-              >
-                <input
-                  type="checkbox"
-                  checked={specialtyKeys.includes(s.key)}
-                  onChange={() => toggleSpecialty(s.key)}
-                  className="accent-[#0f9b8e]"
-                />
-                {s.title}
-              </label>
-            ))}
+          <div className="flex items-center gap-2 mb-3">
+            <input
+              value={newSpecialty}
+              onChange={(e) => setNewSpecialty(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addSpecialty();
+                }
+              }}
+              placeholder="Ex: Consulta dermatológica"
+              className="flex-1 rounded-lg border border-border bg-card px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f9b8e]/40"
+            />
+            <button
+              type="button"
+              onClick={addSpecialty}
+              className="bg-[#0f9b8e] hover:bg-[#0c7a70] text-white font-semibold px-4 py-2.5 rounded-lg transition-colors shrink-0"
+            >
+              Adicionar
+            </button>
           </div>
+          {specialtyKeys.length > 0 && (
+            <ul className="flex flex-col gap-2">
+              {specialtyKeys.map((s) => (
+                <li
+                  key={s}
+                  className="flex items-center justify-between gap-2.5 border border-border rounded-lg px-3.5 py-2.5 text-sm"
+                >
+                  {s}
+                  <button
+                    type="button"
+                    onClick={() => removeSpecialty(s)}
+                    className="text-muted-foreground hover:text-red-600 transition-colors"
+                    aria-label={`Remover ${s}`}
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         {error && <p className="text-sm text-red-600">{error}</p>}

@@ -1,28 +1,16 @@
 import { GraduationCap, HeartHandshake, RefreshCcw } from "lucide-react";
 import { PageHero } from "../components/PageHero";
 import { CtaSection } from "../components/CtaSection";
+import { getCopy, fillClinicName } from "../lib/copy";
 import { useSite } from "../context/SiteContext";
 
-const points = [
-  {
-    icon: GraduationCap,
-    title: "Profissionais especializados",
-    desc: "Cirurgiões-dentistas com especialização em cada área de tratamento, sempre atualizados com as técnicas mais modernas.",
-  },
-  {
-    icon: HeartHandshake,
-    title: "Atendimento humanizado",
-    desc: "Cada paciente é ouvido com atenção, com explicações claras sobre diagnóstico e tratamento, sem pressa.",
-  },
-  {
-    icon: RefreshCcw,
-    title: "Educação continuada",
-    desc: "Equipe em constante atualização, participando de cursos e congressos para trazer o que há de mais moderno pra clínica.",
-  },
-];
+const pointIcons = [GraduationCap, HeartHandshake, RefreshCcw];
 
 export default function Equipe() {
   const { config } = useSite();
+  const isDemo = config.slug === null;
+  const copy = getCopy(isDemo);
+  const points = copy.equipe.points.map((p, i) => ({ ...p, icon: pointIcons[i] }));
 
   return (
     <div>
@@ -39,13 +27,9 @@ export default function Equipe() {
               Nossa equipe
             </span>
             <h2 className="font-display text-3xl font-semibold text-foreground mt-3 mb-4">
-              Quem cuida do seu sorriso na {config.clinicName}
+              {fillClinicName(copy.equipe.sectionTitle, config.clinicName)}
             </h2>
-            <p className="text-muted-foreground leading-relaxed">
-              Nossa equipe reúne cirurgiões-dentistas especializados em diferentes áreas da
-              odontologia, prontos para cuidar de cada fase do seu tratamento com atenção e
-              transparência.
-            </p>
+            <p className="text-muted-foreground leading-relaxed">{copy.equipe.sectionDesc}</p>
           </div>
 
           <div className="grid sm:grid-cols-3 gap-6">

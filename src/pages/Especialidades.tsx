@@ -1,20 +1,31 @@
+import { CheckCircle2 } from "lucide-react";
 import { PageHero } from "../components/PageHero";
 import { CtaSection } from "../components/CtaSection";
 import { specialties } from "../lib/specialties";
+import { getCopy } from "../lib/copy";
 import { waLink } from "../lib/site";
 import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { useSite } from "../context/SiteContext";
 
 export default function Especialidades() {
   const { config, ctaMessage } = useSite();
-  const shown = specialties.filter((s) => config.specialtyKeys.includes(s.key));
+  const isDemo = config.slug === null;
+  const copy = getCopy(isDemo);
+  const shown = isDemo
+    ? specialties.filter((s) => config.specialtyKeys.includes(s.key))
+    : config.specialtyKeys.map((label) => ({
+        key: label,
+        icon: CheckCircle2,
+        title: label,
+        desc: "",
+      }));
 
   return (
     <div>
       <PageHero
-        eyebrow="Tratamentos"
-        title="Especialidades para cuidar do seu sorriso por completo"
-        subtitle="Do preventivo ao mais avançado, você encontra tudo em um só lugar, com profissionais especializados em cada área."
+        eyebrow={copy.especialidades.heroEyebrow}
+        title={copy.especialidades.heroTitle}
+        subtitle={copy.especialidades.heroSubtitle}
       />
 
       <section className="py-20 bg-background">
@@ -29,12 +40,14 @@ export default function Especialidades() {
                   <Icon className="w-6 h-6" />
                 </div>
                 <h3 className="font-display text-lg font-semibold text-foreground mb-2">{title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed mb-5 flex-1">{desc}</p>
+                {desc && (
+                  <p className="text-muted-foreground text-sm leading-relaxed mb-5 flex-1">{desc}</p>
+                )}
                 <a
                   href={waLink(ctaMessage(`quero saber mais sobre ${title.toLowerCase()}`))}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:gap-3 transition-all"
+                  className={`inline-flex items-center gap-2 text-sm font-semibold text-primary hover:gap-3 transition-all ${desc ? "" : "mt-5"}`}
                 >
                   <WhatsAppIcon className="w-4 h-4" />
                   Tirar dúvidas
@@ -45,10 +58,7 @@ export default function Especialidades() {
         </div>
       </section>
 
-      <CtaSection
-        title="Não sabe qual tratamento você precisa?"
-        subtitle="Fale com a nossa equipe e a gente te orienta sem compromisso."
-      />
+      <CtaSection title={copy.especialidades.ctaTitle} subtitle={copy.especialidades.ctaSubtitle} />
     </div>
   );
 }

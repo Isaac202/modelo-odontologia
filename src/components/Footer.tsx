@@ -3,11 +3,13 @@ import { MapPin, Clock } from "lucide-react";
 import { WhatsAppIcon } from "./WhatsAppIcon";
 import { BrandMark } from "./BrandMark";
 import { NAV_ITEMS, waLink } from "../lib/site";
+import { getCopy } from "../lib/copy";
 import { useSite } from "../context/SiteContext";
 
 export function Footer() {
   const year = new Date().getFullYear();
   const { config, path, ctaMessage } = useSite();
+  const copy = getCopy(config.slug === null);
 
   return (
     <footer className="bg-foreground text-white py-14">
@@ -18,10 +20,7 @@ export function Footer() {
               <BrandMark size="sm" />
               <span className="font-display text-lg font-semibold">{config.clinicName}</span>
             </div>
-            <p className="text-sm text-white/55 leading-relaxed max-w-xs">
-              Odontologia completa para toda a família, com carinho, tecnologia e um sorriso de cada
-              vez.
-            </p>
+            <p className="text-sm text-white/55 leading-relaxed max-w-xs">{copy.footerTagline}</p>
           </div>
 
           <div>
@@ -75,7 +74,8 @@ export function Footer() {
 
         <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <p className="text-xs text-white/35">
-            © {year} {config.clinicName} Odontologia. Todos os direitos reservados.
+            © {year} {config.clinicName}
+            {copy.footerSuffix}
           </p>
           <p className="text-xs text-white/35">Site-modelo criado por Oliveira & Co.</p>
         </div>

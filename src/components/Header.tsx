@@ -4,11 +4,13 @@ import { Menu, X } from "lucide-react";
 import { WhatsAppIcon } from "./WhatsAppIcon";
 import { BrandMark } from "./BrandMark";
 import { NAV_ITEMS, waLink } from "../lib/site";
+import { getCopy } from "../lib/copy";
 import { useSite } from "../context/SiteContext";
 
 export function Header() {
   const [open, setOpen] = useState(false);
   const { config, path, ctaMessage } = useSite();
+  const copy = getCopy(config.slug === null);
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
@@ -18,9 +20,11 @@ export function Header() {
             <BrandMark />
             <span className="font-display text-lg font-semibold text-foreground leading-none">
               {config.clinicName}
-              <span className="block text-[10px] font-sans font-medium tracking-widest text-primary uppercase mt-0.5">
-                Odontologia
-              </span>
+              {copy.headerBadge && (
+                <span className="block text-[10px] font-sans font-medium tracking-widest text-primary uppercase mt-0.5">
+                  {copy.headerBadge}
+                </span>
+              )}
             </span>
           </Link>
 

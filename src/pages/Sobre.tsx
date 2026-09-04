@@ -1,25 +1,10 @@
 import { HeartHandshake, Target, Eye, Gem, Building2, Wifi, Coffee, Baby } from "lucide-react";
 import { PageHero } from "../components/PageHero";
 import { CtaSection } from "../components/CtaSection";
+import { getCopy, fillClinicName } from "../lib/copy";
 import { useSite } from "../context/SiteContext";
 
-const values = [
-  {
-    icon: Target,
-    title: "Missão",
-    desc: "Cuidar da saúde bucal de cada paciente com excelência técnica e acolhimento humano.",
-  },
-  {
-    icon: Eye,
-    title: "Visão",
-    desc: "Ser a clínica de referência em odontologia na região, reconhecida pela confiança dos pacientes.",
-  },
-  {
-    icon: Gem,
-    title: "Valores",
-    desc: "Ética, transparência, atualização constante e respeito ao tempo e ao bolso do paciente.",
-  },
-];
+const valueIcons = [Target, Eye, Gem];
 
 const structure = [
   { icon: Building2, label: "6 consultórios climatizados" },
@@ -30,12 +15,16 @@ const structure = [
 
 export default function Sobre() {
   const { config } = useSite();
+  const isDemo = config.slug === null;
+  const copy = getCopy(isDemo);
+  const values = copy.sobre.values.map((v, i) => ({ ...v, icon: valueIcons[i] }));
+
   return (
     <div>
       <PageHero
-        eyebrow="Nossa história"
-        title="Cuidado odontológico com nome e sobrenome"
-        subtitle="Há mais de 15 anos cuidando de sorrisos com uma equipe que trata cada paciente pelo nome."
+        eyebrow={copy.sobre.heroEyebrow}
+        title={copy.sobre.heroTitle}
+        subtitle={copy.sobre.heroSubtitle}
       />
 
       <section className="py-20 bg-background">
@@ -46,12 +35,10 @@ export default function Sobre() {
                 Quem somos
               </span>
               <h2 className="font-display text-3xl font-semibold text-foreground mt-3 mb-5">
-                Uma clínica pensada para o seu conforto
+                {copy.sobre.quemSomosTitle}
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-4">
-                A {config.clinicName} nasceu com um propósito simples: oferecer um atendimento
-                odontológico próximo, honesto e sem enrolação. Começamos com um único consultório e,
-                hoje, contamos com uma equipe multidisciplinar preparada para cuidar de toda a família.
+                {fillClinicName(copy.sobre.quemSomosP1, config.clinicName)}
               </p>
               <p className="text-muted-foreground leading-relaxed">
                 Investimos constantemente em equipamentos digitais e atualização da equipe para
@@ -108,10 +95,7 @@ export default function Sobre() {
         </div>
       </section>
 
-      <CtaSection
-        title="Vamos cuidar do seu sorriso juntos?"
-        subtitle="Agende uma avaliação e conheça de perto a nossa estrutura."
-      />
+      <CtaSection title={copy.sobre.ctaTitle} subtitle={copy.sobre.ctaSubtitle} />
     </div>
   );
 }

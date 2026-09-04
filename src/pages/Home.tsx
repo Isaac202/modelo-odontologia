@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, Star, CalendarCheck, ShieldCheck, Clock, Smile } from "lucide-react";
+import { ArrowRight, Check, Star, CalendarCheck, ShieldCheck, Clock, Smile, CheckCircle2 } from "lucide-react";
 import { WhatsAppIcon } from "../components/WhatsAppIcon";
 import { CtaSection } from "../components/CtaSection";
 import { specialties } from "../lib/specialties";
+import { getCopy, fillClinicName } from "../lib/copy";
 import { waLink } from "../lib/site";
 import { useSite } from "../context/SiteContext";
 
@@ -13,24 +14,13 @@ const highlights = [
   { icon: Smile, label: "Atendimento humanizado" },
 ];
 
-const testimonials = [
-  {
-    name: "Juliana R.",
-    text: "Equipe super atenciosa, me senti acolhida do início ao fim do tratamento. Recomendo de olhos fechados!",
-  },
-  {
-    name: "Marcelo T.",
-    text: "Fiz meu implante com a clínica e o resultado ficou perfeito. Processo tranquilo e bem explicado.",
-  },
-  {
-    name: "Fernanda A.",
-    text: "Minha filha tinha medo de dentista e hoje pede pra voltar. A odontopediatra é incrível com as crianças.",
-  },
-];
-
 export default function Home() {
   const { config, path, ctaMessage } = useSite();
-  const shownSpecialties = specialties.filter((s) => config.specialtyKeys.includes(s.key));
+  const isDemo = config.slug === null;
+  const copy = getCopy(isDemo);
+  const shownSpecialties = isDemo
+    ? specialties.filter((s) => config.specialtyKeys.includes(s.key))
+    : config.specialtyKeys.map((label) => ({ key: label, icon: CheckCircle2, title: label, desc: "" }));
 
   return (
     <div>
@@ -40,14 +30,13 @@ export default function Home() {
             <div>
               <div className="inline-flex items-center gap-2 bg-muted text-primary text-xs font-semibold px-3.5 py-1.5 rounded-full mb-7 border border-primary/15">
                 <span className="w-1.5 h-1.5 rounded-full bg-accent inline-block" />
-                Odontologia para toda a família
+                {copy.home.heroBadge}
               </div>
               <h1 className="font-display text-4xl md:text-5xl font-semibold text-foreground leading-[1.12] mb-6">
-                Um sorriso saudável começa com o cuidado certo.
+                {copy.home.heroTitle}
               </h1>
               <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-lg">
-                Da limpeza de rotina aos tratamentos mais avançados, a {config.clinicName} cuida de
-                cada detalhe com tecnologia, carinho e uma equipe que você confia.
+                {fillClinicName(copy.home.heroSubtitle, config.clinicName)}
               </p>
               <div className="flex flex-col sm:flex-row gap-3 mb-10">
                 <a
@@ -121,10 +110,10 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-14">
             <span className="text-accent-dark font-semibold text-sm uppercase tracking-widest">
-              O que tratamos
+              {copy.home.specialtiesEyebrow}
             </span>
             <h2 className="font-display text-3xl md:text-4xl font-semibold text-foreground mt-3">
-              Especialidades para cada fase do seu sorriso
+              {copy.home.specialtiesTitle}
             </h2>
           </div>
           <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-5">
@@ -137,7 +126,7 @@ export default function Home() {
                   <Icon className="w-5 h-5" />
                 </div>
                 <h3 className="font-display font-semibold text-foreground mb-1.5">{title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>
+                {desc && <p className="text-sm text-muted-foreground leading-relaxed">{desc}</p>}
               </div>
             ))}
           </div>
@@ -164,7 +153,7 @@ export default function Home() {
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-6">
-            {testimonials.map((t) => (
+            {copy.home.testimonials.map((t) => (
               <div key={t.name} className="bg-card border border-border rounded-2xl p-6">
                 <div className="flex gap-0.5 text-accent mb-3">
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -179,7 +168,7 @@ export default function Home() {
         </div>
       </section>
 
-      <CtaSection />
+      <CtaSection title={copy.home.ctaTitle} subtitle={copy.home.ctaSubtitle} />
     </div>
   );
 }
