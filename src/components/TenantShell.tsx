@@ -46,7 +46,17 @@ export function TenantShell() {
       if (tenant.booking_slug) {
         fetchSiteData(tenant.slug).then((data) => {
           if (!active || !data.connected) return;
-          setConfig((prev) => (prev ? { ...prev, eaServices: data.services, eaWorkingPlan: data.workingPlan } : prev));
+          setConfig((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  eaServices: data.services,
+                  eaWorkingPlan: data.workingPlan,
+                  address: data.address || prev.address,
+                  phoneDisplay: data.phoneDisplay || prev.phoneDisplay,
+                }
+              : prev,
+          );
         });
       }
     });

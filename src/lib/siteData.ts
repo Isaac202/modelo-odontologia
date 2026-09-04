@@ -19,10 +19,18 @@ export type SiteData = {
   connected: boolean;
   services: EaService[];
   workingPlan: WorkingPlan | null;
+  address: string | null;
+  phoneDisplay: string | null;
 };
 
 export async function fetchSiteData(slug: string): Promise<SiteData> {
-  const empty: SiteData = { connected: false, services: [], workingPlan: null };
+  const empty: SiteData = {
+    connected: false,
+    services: [],
+    workingPlan: null,
+    address: null,
+    phoneDisplay: null,
+  };
   try {
     const res = await fetch(`/api/site-data?slug=${encodeURIComponent(slug)}`);
     if (!res.ok) return empty;
@@ -32,6 +40,8 @@ export async function fetchSiteData(slug: string): Promise<SiteData> {
       connected: Boolean(data.connected),
       services: Array.isArray(data.services) ? data.services : [],
       workingPlan: data.workingPlan ?? null,
+      address: data.address ?? null,
+      phoneDisplay: data.phoneDisplay ?? null,
     };
   } catch {
     return empty;

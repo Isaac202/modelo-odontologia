@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-const EMPTY_RESPONSE = { connected: false, services: [], workingPlan: null };
+const EMPTY_RESPONSE = { connected: false, services: [], workingPlan: null, address: null, phoneDisplay: null };
 
 export default async function handler(req, res) {
   const slug = Array.isArray(req.query.slug) ? req.query.slug[0] : req.query.slug;
@@ -44,7 +44,7 @@ export default async function handler(req, res) {
     const base = easyBaseUrl.replace(/\/$/, "");
     const headers = { Authorization: `Bearer ${secrets.booking_api_token}` };
 
-    const [servicesRes, providersRes] = await Promise.all([
+    const [servicesRes, providersRes, adminsRes] = await Promise.all([
       fetch(`${base}/index.php/api/v1/services?length=100`, {
         headers,
         signal: AbortSignal.timeout(8000),
@@ -53,10 +53,15 @@ export default async function handler(req, res) {
         headers,
         signal: AbortSignal.timeout(8000),
       }),
+      fetch(`${base}/index.php/api/v1/admins?length=50`, {
+        headers,
+        signal: AbortSignal.timeout(8000),
+      }),
     ]);
 
     const servicesData = servicesRes.ok ? await servicesRes.json().catch(() => []) : [];
     const providersData = providersRes.ok ? await providersRes.json().catch(() => []) : [];
+    const adminsData = adminsRes.ok ? await adminsRes.json().catch(() => []) : [];
 
     const services = Array.isArray(servicesData)
       ? servicesData
@@ -69,7 +74,17 @@ export default async function handler(req, res) {
       : null;
     const workingPlan = providerWithPlan?.settings?.workingPlan ?? null;
 
-    res.status(200).json({ connected: true, services, workingPlan });
+    const adminWithProfile = Array.isArray(adminsData)
+      ? adminsData.find((a) => a.address || a.phone || a.mobile)
+      : null;
+    const address = adminWithProfile
+      ? [adminWithProfile.address, adminWithProfile.city, adminWithProfile.state]
+          .filter(Boolean)
+          .join(" — ") || null
+      : null;
+    const phoneDisplay = adminWithProfile ? adminWithProfile.phone || adminWithProfile.mobile || null : null;
+
+    res.status(200).json({ connected: true, services, workingPlan, address, phoneDisplay });
   } catch {
     res.status(200).json(EMPTY_RESPONSE);
   }

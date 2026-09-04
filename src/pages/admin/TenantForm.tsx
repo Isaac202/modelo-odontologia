@@ -371,6 +371,10 @@ export default function TenantForm() {
             placeholder="Rua Exemplo, 123 — Bairro, Cidade - UF"
             className="w-full rounded-lg border border-border bg-card px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0f9b8e]/40"
           />
+          <p className="text-xs text-muted-foreground mt-1.5">
+            Valor inicial — depois de conectada, se a clínica preencher o endereço dela no próprio
+            painel de agendamento, ele passa a valer no site.
+          </p>
         </div>
 
         <div>
@@ -386,7 +390,8 @@ export default function TenantForm() {
           />
           <p className="text-xs text-muted-foreground mt-1.5">
             É só exibição — os botões de WhatsApp do site continuam abrindo conversa com a Oliveira &
-            Co.
+            Co. Valor inicial — se a clínica preencher o telefone dela no próprio painel de
+            agendamento, ele passa a valer no site.
           </p>
         </div>
 
